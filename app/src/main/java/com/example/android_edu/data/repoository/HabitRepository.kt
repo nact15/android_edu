@@ -1,18 +1,19 @@
-package com.example.android_edu.habits
+package com.example.android_edu.data.repoository
 
+import com.example.android_edu.data.models.HabitDto
 import com.github.javafaker.Faker
 import kotlin.random.Random
 
 class HabitRepository {
 
-    var habits = mutableListOf<Habit>()
+    var habits = mutableListOf<HabitDto>()
 
     init {
         val count = Random.nextInt(50, 150)
         val faker = Faker.instance()
 
         habits = (1..count).map {
-            Habit(
+            HabitDto(
                 id = it.toLong().toString(),
                 title = faker.book().title(),
                 description = faker.book().genre(),
@@ -20,5 +21,10 @@ class HabitRepository {
                 isDone = it % 2 == 0
             )
         }.toMutableList()
+    }
+
+    suspend fun updateItem(mapToDto: HabitDto, isDone: Boolean): HabitDto {
+        // this is network request
+        return mapToDto.copy(isDone = isDone)
     }
 }

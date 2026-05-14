@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<navigation
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
     app:startDestination="@id/fragmentHabitList">
@@ -9,11 +8,21 @@
     <fragment
         android:id="@+id/fragmentHabitList"
         android:name="com.example.android_edu.habits.HabitListFragment"
-        android:label="Habits"/>
+        android:label="Habits">
+        <argument
+            android:name="type"
+            android:defaultValue="ALL"
+            app:argType="com.example.android_edu.habits.HabitScreenType" />
+    </fragment>
 
     <fragment
         android:id="@+id/fragmentCompletedHabits"
-        android:name="com.example.android_edu.habits.CompletedHabitsFragment"
-        android:label="Completed Habits"/>
+        android:name="com.example.android_edu.habits.HabitListFragment"
+        android:label="Completed Habits">
+        <argument
+            android:name="type"
+            android:defaultValue="CHECKED"
+            app:argType="com.example.android_edu.habits.HabitScreenType" />
+    </fragment>
 
 </navigation>
