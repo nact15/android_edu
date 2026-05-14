@@ -27,11 +27,12 @@
    * class — обычный класс для поведения, lifecycle, сервисов, экранов, адаптеров.
    * data class — класс для данных.
 5. sealed classes
-6. Interface VS Abstract Class vs Sealed Class
-7. high order function
+6. value class + fun interface
+7. Interface VS Abstract Class vs Sealed Class
+8. high order function
    #### Higher-order function — функция, которая принимает функцию или возвращает функцию.
    it — неявное имя единственного параметра lambda.
-8. inline functions
+9. inline functions
 #### “вставь тело этой функции прямо в место вызова”
 **в inline lambda можно сделать return из внешней функции.**
 

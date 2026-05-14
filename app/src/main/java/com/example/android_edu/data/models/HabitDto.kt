@@ -1,6 +1,6 @@
-package com.example.android_edu.habits
+package com.example.android_edu.data.models
 
-data class Habit(
+data class HabitDto(
     val id: String,
     val title: String,
     val description: String,

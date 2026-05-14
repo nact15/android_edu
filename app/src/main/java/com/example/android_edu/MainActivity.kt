@@ -27,16 +27,9 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(
-                R.id.navHostFragment
-            ) as NavHostFragment
-
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
         val navController = navHostFragment.navController
 
-        binding.bottomNavigation.setupWithNavController(
-            navController
-        )
+        binding.bottomNavigation.setupWithNavController(navController)
     }
 }

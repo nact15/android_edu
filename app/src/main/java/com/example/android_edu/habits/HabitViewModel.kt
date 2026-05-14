@@ -2,72 +2,63 @@ package com.example.android_edu.habits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.android_edu.data.repoository.HabitRepository
+import com.example.android_edu.habits.state.HabitDvo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class HabitViewModel : ViewModel() {
-    private val habitRepository = HabitRepository()
-    private val _uiState = MutableStateFlow<HabitUiState>(
-        HabitUiState.Loading
-    )
+interface HabitViewModelContract {
+    val isLoading: StateFlow<Boolean>
+    val habits: StateFlow<List<HabitDvo>>
+    val completedHabits: StateFlow<List<HabitDvo>>
+}
 
-    val uiState = _uiState.asStateFlow()
+
+class HabitViewModel(
+    private val habitRepository: HabitRepository = HabitRepository()
+) : ViewModel(), HabitViewModelContract {
+
+    override val isLoading = MutableStateFlow(true)
+    override val habits = MutableStateFlow(emptyList<HabitDvo>())
+    override val completedHabits = habits.map { it.filter { item -> item.isDone } }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
 
     init {
         loadHabits()
     }
 
+
     private fun loadHabits() {
 
         viewModelScope.launch {
-            _uiState.value = HabitUiState.Loading
+            isLoading.update { true }
 
             delay(3500)
 
-            val habits = habitRepository.habits
-            val completedHabits = habits.filter { it.isDone }
+            val habitsDto = habitRepository.habits
+            habits.update { habitsDto.map { HabitDvo.mapFromDto(it) } }
 
-            _uiState.value =
-                HabitUiState.Content(
-                    habits = habits,
-                    completedHabits = completedHabits
-                )
+            isLoading.update { false }
         }
     }
 
-    fun toggleHabitDone(
-        habit: Habit,
-        isDone: Boolean
-    ) {
+    fun toggleHabitDone(habit: HabitDvo) {
 
-        updateContent { state ->
+        viewModelScope.launch {
+            isLoading.update { true }
 
-            val updatedHabits = state.habits.map { oldHabit ->
+            val updatedHabit = habitRepository.updateItem(HabitDvo.mapToDto(habit), isDone = !habit.isDone)
+            val updatedList = habits.value.map { if (it.id == updatedHabit.id) HabitDvo.mapFromDto(updatedHabit) else it }
 
-                if (oldHabit.id == habit.id) {
-                    oldHabit.copy(isDone = isDone)
-                } else {
-                    oldHabit
-                }
-            }
-
-            state.copy(
-                habits = updatedHabits,
-                completedHabits = updatedHabits.filter { it.isDone }
-            )
-        }
-    }
-
-    private inline fun updateContent(
-        block: (HabitUiState.Content) -> HabitUiState.Content
-    ) {
-
-        val current = _uiState.value
-
-        if (current is HabitUiState.Content) {
-            _uiState.value = block(current)
+            habits.update { updatedList }
+            isLoading.update { false }
         }
     }
 }

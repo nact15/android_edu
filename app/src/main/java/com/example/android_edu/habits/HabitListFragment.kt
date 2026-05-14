@@ -1,79 +1,66 @@
 package com.example.android_edu.habits
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.android_edu.App
-import com.example.android_edu.R
 import com.example.android_edu.databinding.FragmentHabitListBinding
-import kotlinx.coroutines.flow.collect
+import com.example.android_edu.habits.adapter.HabitAdapter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
+class HabitListFragment : Fragment() {
 
     private val viewModel by activityViewModels<HabitViewModel>()
 
     private var _binding: FragmentHabitListBinding? = null
     private val binding get() = _binding!!
 
-    private val habitRepository: HabitRepository
-        get() = (requireActivity().application as App).habitRepository
+    private val type by lazy { arguments?.getSerializable("type") ?: HabitScreenType.ALL }
 
-    private val adapter = HabitAdapter { habit, isDone ->
-        viewModel.toggleHabitDone(habit = habit, isDone = isDone)
+    private val adapter by lazy { HabitAdapter { viewModel.toggleHabitDone(habit = it) } }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        observeState()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentHabitListBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        _binding = FragmentHabitListBinding.bind(view)
-
-        binding.habitRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.habitRecyclerView.adapter = adapter
-
-        adapter.submitItems(
-            habitRepository.habits
-        )
-
-        observeState()
     }
 
-    private fun observeState() {
-
-        viewLifecycleOwner.lifecycleScope.launch {
-
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-
-                viewModel.uiState.collect { state ->
-
-                    when (state) {
-
-                        is HabitUiState.Loading -> {
-
-                            binding.loadingContainer.isVisible = true
-                        }
-
-                        is HabitUiState.Content -> {
-
-                            binding.loadingContainer.isVisible = false
-
-                            adapter.submitItems(state.habits)
-                        }
-                    }
-                }
+    private fun observeState() = with(viewModel) {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
+                (if (type == HabitScreenType.ALL) habits else completedHabits)
+                    .onEach { adapter.submitList(it) }
+                    .launchIn(this)
+            }
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                isLoading
+                    .onEach { binding.loadingContainer.isVisible = it }
+                    .launchIn(this)
             }
         }
     }
 
 
     override fun onDestroyView() {
-        binding.habitRecyclerView.adapter = null
         _binding = null
         super.onDestroyView()
     }
