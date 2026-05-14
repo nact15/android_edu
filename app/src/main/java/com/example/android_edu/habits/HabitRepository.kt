@@ -21,14 +21,4 @@ class HabitRepository {
             )
         }.toMutableList()
     }
-
-    fun toggleHabitDone(habitId: String) {
-        habits = habits.map { habit ->
-            if (habit.id == habitId) {
-                habit.copy(isDone = !habit.isDone)
-            } else {
-                habit
-            }
-        }.toMutableList()
-    }
 }

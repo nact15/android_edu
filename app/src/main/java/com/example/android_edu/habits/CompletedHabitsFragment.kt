@@ -11,15 +11,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.android_edu.App
 import com.example.android_edu.R
+import com.example.android_edu.databinding.FragmentCompletedHabitsBinding
 import com.example.android_edu.databinding.FragmentHabitListBinding
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
-class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
+class CompletedHabitsFragment : Fragment(R.layout.fragment_completed_habits) {
 
     private val viewModel by activityViewModels<HabitViewModel>()
 
-    private var _binding: FragmentHabitListBinding? = null
+    private var _binding: FragmentCompletedHabitsBinding? = null
     private val binding get() = _binding!!
 
     private val habitRepository: HabitRepository
@@ -32,7 +32,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        _binding = FragmentHabitListBinding.bind(view)
+        _binding = FragmentCompletedHabitsBinding.bind(view)
 
         binding.habitRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.habitRecyclerView.adapter = adapter
@@ -63,7 +63,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
 
                             binding.loadingContainer.isVisible = false
 
-                            adapter.submitItems(state.habits)
+                            adapter.submitItems(state.completedHabits)
                         }
                     }
                 }

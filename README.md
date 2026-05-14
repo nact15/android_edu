@@ -10,28 +10,34 @@
 1. git reflog
 2. git worktree
 
-## Kotlin
+# Kotlin
 
-1. val, var, const val, lateinit
+## 1. val, var, const val, lateinit
    const val должна быть top-level, либо внутри object / companion object.
    Почему не внутри функции: потому что const val должна быть известна компилятору как стабильная
    константа, доступная как часть класса/файла, а локальная переменная функции создается в момент
    вызова функции.
-2. == vs ===
-3. object (equals, hashcode, toString)
-   #### object — самостоятельный singleton.
-   #### companion object — singleton внутри класса, для вещей, связанных с этим классом.
-4. data class vs class
-    * data class автоматически генерирует equals() по свойствам из primary constructor.
-    * data class генерирует componentN() автоматически по параметрам primary constructor.
-    * class — обычный класс для поведения, lifecycle, сервисов, экранов, адаптеров.
-    * data class — класс для данных.
-5. sealed classes
-6. Interface VS Abstract Class vs Sealed Class
-7. high order function
-   #### Higher-order function — функция, которая принимает функцию или возвращает функцию.
-   it — неявное имя единственного параметра lambda.
-8. inline functions
+## 2. == vs ===
+## 3. object (equals, hashcode, toString)
+#### object — самостоятельный singleton.
+#### companion object — singleton внутри класса, для вещей, связанных с этим классом.
+## 4. data class vs class
+* data class автоматически генерирует equals() по свойствам из primary constructor.
+* data class генерирует componentN() автоматически по параметрам primary constructor.
+* class — обычный класс для поведения, lifecycle, сервисов, экранов, адаптеров.
+* data class — класс для данных.
+## 5. sealed classes
+## 6. Interface VS Abstract Class vs Sealed Class
+| Механизм                 | Пример               |
+| ------------------------ | -------------------- |
+| inheritance              | `class A : B()`      |
+| interface implementation | `class A : Runnable` |
+| delegation               | `val x by lazy {}`   |
+
+## 7. high order function
+#### Higher-order function — функция, которая принимает функцию или возвращает функцию.
+it — неявное имя единственного параметра lambda.
+## 8. inline functions
 #### “вставь тело этой функции прямо в место вызова”
 **в inline lambda можно сделать return из внешней функции.**
 
@@ -39,7 +45,7 @@
 * noinline говорит: “эту lambda не встраивай, оставь как обычный объект”.
 * inline lambda -> код встраивается, нельзя сохранить как объект
 * noinline lambda -> остается объектом, можно сохранить/передать дальше
-9. infix functions
+## 9. infix functions
 * Быть member function или extension function.
 * Иметь ровно один параметр.
 * Не иметь vararg.
@@ -56,8 +62,8 @@
 * invoke
 * compareTo
 ## 11. value class
-    - value class — отдельный тип поверх одного значения.
-    - value class дает отдельный тип, который компилятор часто представляет как исходное значение
+- value class — отдельный тип поверх одного значения.
+- value class дает отдельный тип, который компилятор часто представляет как исходное значение
 ## 12. memory, object links, reference types, GC
 **Int? должен уметь хранить null, а Java primitive int не может быть null.**
 Поэтому используется объектная обертка.
@@ -72,7 +78,7 @@
 - static/object singletons
 - живые Activity/Fragment/ViewModel
 - системные ссылки
-13. generics (in class, in methods, in, out, where, reified)
+## 13. generics (in class, in methods, in, out, where, reified)
     * in = consumer = можно принимать T
     * out = producer = можно читать T
     * Producer Extends, Consumer Super(PECS)
@@ -115,14 +121,28 @@ Sequence = лениво + поэлементно + запускается termin
 - protected — внутри класса и наследников.
 - internal — внутри Gradle/Kotlin module.
 - private set — читать можно публично, менять только внутри класса.
+## 19. by = delegation
+```kotlin
+val name by lazy {
+    println("init")
+    "Nastya"
+}
+```
+```
+первый доступ:
+init
+Nastya
 
-## Async
+второй доступ:
+Nastya
+```
+# Async
 
 1. coroutines + flow (flow, shared, state, channel)
 2. rxJava3 + subjects (optional topic, chains)
 3. Java util concurrent (optional topic)
 
-## Android
+# Android
 
 ## 1. Android components - Activity, Broadcast Receiver, Content Provider, Service.
 * Activity — экран/точка входа для UI.
@@ -1147,6 +1167,127 @@ Grid:
 13. types of services (background or foreground)
 14. workers (work manager)
 15. delegates
+## 16. ViewModel
+**UI state holder**
+
+`by viewModels()`
+
+Android:
+проверяет:
+- “Есть ли уже ViewModel для этого Activity?”
+- если есть: возвращает старую
+- если нет: создает новую
+
+**Она живет: пока жив screen scope**
+
+| Где создана                | Когда уничтожится      |
+| -------------------------- | ---------------------- |
+| Activity ViewModel         | когда Activity finish  |
+| Fragment ViewModel         | когда Fragment destroy |
+| Navigation graph ViewModel | когда graph closed     |
+
+**Что должно быть в ViewModel**
+state
+network calls
+coroutine logic
+repositories
+бизнес-логика
+**Что НЕ должно быть**
+* Context (обычно)
+* View
+* Fragment
+* Activity
+
+#### StateFlow
+```kotlin
+class MainViewModel : ViewModel() {
+
+    private val _counter = MutableStateFlow(0)
+
+    val counter = _counter.asStateFlow()
+
+    fun increment() {
+        _counter.value++
+    }
+}
+```
+
+| Flutter          | Android               |
+| ---------------- | --------------------- |
+| Stream           | Flow                  |
+| ValueNotifier    | StateFlow             |
+| Bloc/Cubit state | ViewModel + StateFlow |
+
+У ViewModel есть:
+
+viewModelScope
+
+Это coroutine scope.
+```
+open screen
+    ↓
+create Activity
+    ↓
+create ViewModel
+    ↓
+rotate screen
+    ↓
+destroy Activity
+    ↓
+create Activity
+    ↓
+reuse SAME ViewModel
+    ↓
+close screen
+    ↓
+destroy Activity
+    ↓
+destroy ViewModel
+```
+
+`private val viewModel by viewModels<MainViewModel>()`
+
+Что делает viewModels()
+
+Он:
+
+ищет ViewModel в ViewModelStore
+        если есть → возвращает
+        если нет → создает
+
+**Без by**
+```kotlin
+val vmProvider = ViewModelProvider(this)
+
+val vm = vmProvider[MainViewModel::class.java]
+```
+
+by viewModels() - это просто красивый Kotlin API поверх delegate-механизма.
+
+#### Flow
+Flow — это поток данных.
+
+
+| Dart             | Kotlin                |
+|------------------|-----------------------|
+| Stream           | Flow                  |
+| stream.listen    | collect               |
+| Bloc/Cubit state | ViewModel + StateFlow |
+
+Обычный Flow: не хранит текущее значение
+
+#### StateFlow
+
+StateFlow — специальный Flow для STATE.
+
+Он:
+- всегда хранит текущее значение
+- сразу отдает последнее значение новому подписчику
+
+```kotlin
+private val _counter = MutableStateFlow(0)
+```
+
 
 ## Libs
 
